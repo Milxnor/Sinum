@@ -714,6 +714,7 @@ namespace Memcury
             return FindPatternEx(handle, pattern, mask, module, module + Memcury::PE::GetNTHeaders()->OptionalHeader.SizeOfImage);
         }
 
+        template <bool bWarnIfNotFound = true>
         static auto FindPattern(const char* signature) -> Scanner
         {
             PE::Address add{ nullptr };
@@ -744,13 +745,16 @@ namespace Memcury
                 }
             }
 
-            MemcuryAssertM(add != 0, "FindPattern return nullptr");
+            if constexpr (bWarnIfNotFound)
+                MemcuryAssertM(add != 0, "FindPattern return nullptr")
+            else if (add == 0)
+                return Scanner(nullptr);
 
             return Scanner(add);
         }
 
         // Supports wide and normal strings both std and pointers
-        template <typename T = const wchar_t*, bool WarnIfNotFound = true>
+        template <typename T = const wchar_t*, bool bWarnIfNotFound = true>
         static auto FindStringRef(T string, uintptr_t moduleBase = PE::GetModuleBase()) -> Scanner
         {
             PE::Address add{ nullptr };
@@ -817,8 +821,10 @@ namespace Memcury
                 }
             }
 
-            if constexpr (WarnIfNotFound)
-                MemcuryAssertM(add != 0, "FindStringRef return nullptr");
+            if constexpr (bWarnIfNotFound)
+                MemcuryAssertM(add != 0, "FindStringRef return nullptr")
+            else if (add == 0)
+                return Scanner(nullptr);
 
             return Scanner(add);
         }
